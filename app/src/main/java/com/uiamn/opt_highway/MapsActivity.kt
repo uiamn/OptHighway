@@ -1,15 +1,16 @@
 package com.uiamn.opt_highway
 
 import android.content.pm.PackageManager
-import android.os.Build
 import android.Manifest
-import android.graphics.Camera
-import android.location.Location
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
+import android.os.Message
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,21 +19,30 @@ import com.google.android.gms.maps.*
 
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.maps.GeoApiContext
+import java.lang.ref.WeakReference
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private var REQUEST_PERMISSION = 1000
 
+    private val MSG_RESULT = 1234
+
     private lateinit var locationClient: FusedLocationProviderClient
     private lateinit var request: LocationRequest
     private lateinit var callback: LocationCallback
+
+    private lateinit var geoApiContext: GeoApiContext
+
+    private val gllh = MapsActivity.gLLFPNHandler(this)
 
     companion object {
         var PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("a", "start!")
         super.onCreate(savedInstanceState)
 
         // 位置情報を扱ふためのpermissionを取得し，startLocationUpdatesを開始
@@ -44,10 +54,79 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        // GeoApiContextを構築
+        geoApiContext = GeoApiContext.Builder()
+                .apiKey(getString(R.string.google_maps_key))
+                .build()
+
+
         findViewById<Button>(R.id.reload_button).setOnClickListener {
             moveCameraToCurrentPosition()
         }
+
+        findViewById<Button>(R.id.startSearchButton).setOnClickListener {
+            getLatLngFromPositionName()
+        }
     }
+
+    private fun getLatLngFromPositionName() {
+        val deptText = findViewById<EditText>(R.id.departureInput).text.toString()
+        val destText = findViewById<EditText>(R.id.destinationInput).text.toString()
+
+        Log.d("aaaaa", deptText)
+        Log.d("bbbbb", destText)
+
+        gLLFPNThread(gllh, geoApiContext, deptText, destText).start()
+
+//        val deptRes = findPlaceFromText(geoApiContext, deptText, InputType.TEXT_QUERY).language("ja").awaitIgnoreError()
+//        val destRes = findPlaceFromText(geoApiContext, destText, InputType.TEXT_QUERY).language("ja").awaitIgnoreError()
+//
+//        val deptLatLng = deptRes.candidates[0].geometry.location
+//        val destLatLng = destRes.candidates[0].geometry.location
+//
+//        mMap.addMarker(MarkerOptions().position(LatLng(deptLatLng.lat, deptLatLng.lng)).title("出発地"))
+//        mMap.addMarker(MarkerOptions().position(LatLng(destLatLng.lat, destLatLng.lng)).title("目的地"))
+    }
+
+    private fun po(v: DeptDestLatLng) {
+        Log.d("hoge", v.toString())
+        mMap.addMarker(MarkerOptions().position(v.dept).title("出発地"))
+        mMap.addMarker(MarkerOptions().position(v.dest).title("目的地"))
+    }
+
+    private class gLLFPNHandler(activity: MapsActivity) : Handler(Looper.getMainLooper()) {
+        private var activityRef: WeakReference<MapsActivity> = WeakReference(activity)
+
+        override fun handleMessage(msg: Message) {
+            val activity = activityRef.get()
+            if (activity == null || activity.isFinishing) {
+                return
+            }
+
+            if (msg.what == activity.MSG_RESULT) {
+                activity.po(msg.obj as DeptDestLatLng)
+            }
+        }
+    }
+
+    private class gLLFPNThread(
+        handler: gLLFPNHandler,
+        geoApiContext: GeoApiContext,
+        deptText: String,
+        destText: String
+    ) : Thread() {
+        private var gllfpn = GetLatLngFromPositionName(geoApiContext)
+        private val handler = handler
+        private val deptText = deptText
+        private val destText = destText
+
+        override fun run() {
+            val latLngs = gllfpn.getLatLngFromPositionName(deptText, destText)
+            handler.sendMessage(handler.obtainMessage(1234, latLngs))
+        }
+
+    }
+
 
     private fun moveCameraToCurrentPosition() {
         Log.d("hogehoge", "fugafug")
@@ -108,6 +187,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+//        mMap.isMyLocationEnabled = true;
         moveCameraToCurrentPosition()
     }
 }
