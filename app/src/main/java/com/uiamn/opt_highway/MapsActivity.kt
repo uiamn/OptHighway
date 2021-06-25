@@ -2,7 +2,6 @@ package com.uiamn.opt_highway
 
 import android.content.pm.PackageManager
 import android.Manifest
-import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -27,15 +26,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private var REQUEST_PERMISSION = 1000
 
-    private val MSG_RESULT = 1234
-
     private lateinit var locationClient: FusedLocationProviderClient
     private lateinit var request: LocationRequest
     private lateinit var callback: LocationCallback
 
     private lateinit var geoApiContext: GeoApiContext
 
-    private val gllh = MapsActivity.gLLFPNHandler(this)
+    private val getLatLngFromPosNameHandler = MapsActivity.GetLatLngFromPositionNameHandler(this)
 
     companion object {
         var PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -76,25 +73,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.d("aaaaa", deptText)
         Log.d("bbbbb", destText)
 
-        gLLFPNThread(gllh, geoApiContext, deptText, destText).start()
-
-//        val deptRes = findPlaceFromText(geoApiContext, deptText, InputType.TEXT_QUERY).language("ja").awaitIgnoreError()
-//        val destRes = findPlaceFromText(geoApiContext, destText, InputType.TEXT_QUERY).language("ja").awaitIgnoreError()
-//
-//        val deptLatLng = deptRes.candidates[0].geometry.location
-//        val destLatLng = destRes.candidates[0].geometry.location
-//
-//        mMap.addMarker(MarkerOptions().position(LatLng(deptLatLng.lat, deptLatLng.lng)).title("出発地"))
-//        mMap.addMarker(MarkerOptions().position(LatLng(destLatLng.lat, destLatLng.lng)).title("目的地"))
+        GetLatLngFromPositionNameThread(getLatLngFromPosNameHandler, geoApiContext, deptText, destText).start()
     }
 
-    private fun po(v: DeptDestLatLng) {
+    private fun addMarkerAtDeptAndDestPoint(v: DeptDestLatLng) {
         Log.d("hoge", v.toString())
         mMap.addMarker(MarkerOptions().position(v.dept).title("出発地"))
         mMap.addMarker(MarkerOptions().position(v.dest).title("目的地"))
     }
 
-    private class gLLFPNHandler(activity: MapsActivity) : Handler(Looper.getMainLooper()) {
+    private class GetLatLngFromPositionNameHandler(activity: MapsActivity) : Handler(Looper.getMainLooper()) {
         private var activityRef: WeakReference<MapsActivity> = WeakReference(activity)
 
         override fun handleMessage(msg: Message) {
@@ -103,17 +91,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 return
             }
 
-            if (msg.what == activity.MSG_RESULT) {
-                activity.po(msg.obj as DeptDestLatLng)
+            if (msg.what == WhatEnum.GLLFPN_RESULT.v) {
+                activity.addMarkerAtDeptAndDestPoint(msg.obj as DeptDestLatLng)
             }
         }
     }
 
-    private class gLLFPNThread(
-        handler: gLLFPNHandler,
-        geoApiContext: GeoApiContext,
-        deptText: String,
-        destText: String
+    private class GetLatLngFromPositionNameThread(
+            handler: GetLatLngFromPositionNameHandler,
+            geoApiContext: GeoApiContext,
+            deptText: String,
+            destText: String
     ) : Thread() {
         private var gllfpn = GetLatLngFromPositionName(geoApiContext)
         private val handler = handler
@@ -122,7 +110,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         override fun run() {
             val latLngs = gllfpn.getLatLngFromPositionName(deptText, destText)
-            handler.sendMessage(handler.obtainMessage(1234, latLngs))
+            handler.sendMessage(handler.obtainMessage(WhatEnum.GLLFPN_RESULT.v, latLngs))
         }
 
     }
