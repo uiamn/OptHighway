@@ -2,6 +2,7 @@ package com.uiamn.opt_highway
 
 import android.content.pm.PackageManager
 import android.Manifest
+import android.app.Activity
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -15,9 +16,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.*
 
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.GeoApiContext
 import java.lang.ref.WeakReference
 
@@ -31,8 +31,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var callback: LocationCallback
 
     private lateinit var geoApiContext: GeoApiContext
+    private lateinit var mapsAPI: MapsFunctions
 
-    private val getLatLngFromPosNameHandler = MapsActivity.GetLatLngFromPositionNameHandler(this)
+    private val getLatLngFromPosNameHandler = MapsActivity.HandlerInMapsActivity(this)
 
     companion object {
         var PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -56,6 +57,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .apiKey(getString(R.string.google_maps_key))
                 .build()
 
+        mapsAPI = MapsFunctions(geoApiContext)
+
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
             moveCameraToCurrentPosition()
@@ -73,16 +76,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.d("aaaaa", deptText)
         Log.d("bbbbb", destText)
 
-        GetLatLngFromPositionNameThread(getLatLngFromPosNameHandler, geoApiContext, deptText, destText).start()
+        GetLatLngFromPositionNameThread(getLatLngFromPosNameHandler, mapsAPI, deptText, destText).start()
     }
 
-    private fun addMarkerAtDeptAndDestPoint(v: DeptDestLatLng) {
+    private fun addMarkerAtDeptAndDestPoint(v: Structures.DeptDestLatLng) {
         Log.d("hoge", v.toString())
-        mMap.addMarker(MarkerOptions().position(v.dept).title("出発地"))
-        mMap.addMarker(MarkerOptions().position(v.dest).title("目的地"))
     }
 
-    private class GetLatLngFromPositionNameHandler(activity: MapsActivity) : Handler(Looper.getMainLooper()) {
+    private fun addMarker(m: MarkerOptions) {
+        mMap.addMarker(m)
+    }
+
+    private class HandlerInMapsActivity(activity: MapsActivity) : Handler(Looper.getMainLooper()) {
         private var activityRef: WeakReference<MapsActivity> = WeakReference(activity)
 
         override fun handleMessage(msg: Message) {
@@ -92,34 +97,76 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
             if (msg.what == WhatEnum.GLLFPN_RESULT.v) {
-                activity.addMarkerAtDeptAndDestPoint(msg.obj as DeptDestLatLng)
+                // 出発地点，目的地点の名称から取得した座標にピンを建てる
+                val po = msg.obj as Structures.DeptDestLatLng
+                activity.addMarker(MarkerOptions().position(po.dept).title("出発地").icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                ))
+                activity.addMarker(MarkerOptions().position(po.dest).title("目的地").icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                ))
+
+                activity.addMarkerAtDeptAndDestPoint(msg.obj as Structures.DeptDestLatLng)
+                GetNearestInterChangeThread(this, activity.mapsAPI, activity, po.dept, po.dest).start()
+            } else if (msg.what == WhatEnum.NIC_RESULT.v) {
+                // 出発地点，目的地点に最も近いICにピンを建てる
+                val po = msg.obj as List<*>
+                val icNearestToDept = po[0] as Structures.LatLngWithName
+                val icNearestToDest = po[1] as Structures.LatLngWithName
+
+                activity.addMarker(MarkerOptions().position(icNearestToDept.point).title(icNearestToDept.name).icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                ))
+                activity.addMarker(MarkerOptions().position(icNearestToDest.point).title(icNearestToDest.name).icon(
+                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+                ))
             }
         }
     }
 
     private class GetLatLngFromPositionNameThread(
-            handler: GetLatLngFromPositionNameHandler,
-            geoApiContext: GeoApiContext,
+            handler: HandlerInMapsActivity,
+            mapsAPI: MapsFunctions,
             deptText: String,
             destText: String
     ) : Thread() {
-        private var gllfpn = GetLatLngFromPositionName(geoApiContext)
+        // 入力された地点名から，緯度経度を取得するスレッド
+        private val mapsAPI = mapsAPI
         private val handler = handler
         private val deptText = deptText
         private val destText = destText
 
         override fun run() {
-            val latLngs = gllfpn.getLatLngFromPositionName(deptText, destText)
+            val latLngs = mapsAPI.obtainLatLngFromPositionName(deptText, destText)
             handler.sendMessage(handler.obtainMessage(WhatEnum.GLLFPN_RESULT.v, latLngs))
         }
+    }
 
+    private class GetNearestInterChangeThread(
+            handler: HandlerInMapsActivity,
+            mapsAPI: MapsFunctions,
+            activity: Activity,
+            deptCoordinate: LatLng,
+            destCoordinate: LatLng
+    ) : Thread() {
+        // 出発地点と目的地点に最も近いインタチェンジを取得するスレッド
+        private val handler = handler
+        private val activity = activity
+        private val mapsAPI = mapsAPI
+        private val deptCoordinate = deptCoordinate
+        private val destCoordinate = destCoordinate
+
+        override fun run() {
+            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
+            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+
+            handler.sendMessage(handler.obtainMessage(WhatEnum.NIC_RESULT.v, listOf(deptNearestIC, destNearestIC)))
+        }
     }
 
 
     private fun moveCameraToCurrentPosition() {
-        Log.d("hogehoge", "fugafug")
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.d("hogehoge", "fugafkjlfsjkl")
             return
         }
         locationClient.lastLocation.addOnCompleteListener { task ->
