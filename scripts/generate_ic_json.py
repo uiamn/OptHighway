@@ -15,7 +15,7 @@ def generate_ic_json(geojson_path: str) -> None:
     with open(geojson_path) as f:
         features = json.load(f)['features']
 
-    ic = filter(lambda x: x['properties']['接合部種別'] in ['1', '2'], features)
+    ic = filter(lambda x: x['properties']['接合部種別'] in ['1', '2'] and x['properties']['設置終了'] == 9999, features)
     j = map(lambda x: {'name': x['properties']['地点名'], 'point': x['geometry']['coordinates']}, ic)
 
     with open('dist/interchanges.json', 'w') as f:

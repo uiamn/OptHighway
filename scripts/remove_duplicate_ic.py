@@ -3,7 +3,7 @@ from pprint import pprint
 
 from generate_joint_graph import generate_joint_list
 
-dist = lambda x1, y1, x2, y2: ((x1 - x2) ** 2 + (y1 - y2) ** 2 ) ** 1/2
+dist = lambda x1, y1, x2, y2: ((x1*2 - x2*2) ** 2 + (y1 - y2) ** 2 ) ** 1/2
 
 
 def get_candidate(prefix, new_graph):
@@ -52,13 +52,18 @@ def remove_duplicate_ic() -> None:
         true_ic_name = None
         min_ic_dist = 99999.9
 
+        # print('===============')
+        # pprint(candidate)
+
         for k, adj_ics in candidate.items():
             cnt = 0
             tmp_dist = 0
 
-            pprint(adj_ics)
+            # pprint(adj_ics)
             for adj in adj_ics:
-                a = list(filter(lambda x: x['name'] == adj['name'], joints))
+                name = adj['name'].split('(')[0]
+                a = list(filter(lambda x: x['name'] == name, joints))
+
                 if len(a) == 0:
                     continue
 
@@ -79,10 +84,18 @@ def remove_duplicate_ic() -> None:
     with open('dist/interchanges.json') as f:
         old_ics = json.load(f)
 
-    final_ics = list(filter(lambda x: x['name'] not in duplication, old_ics)) + new_ic_part
+    final_ics = list(filter(lambda x: x['name'] not in true_duplication, old_ics)) + new_ic_part
 
     with open('dist/final_interchanges.json', 'w') as f:
         json.dump(final_ics, f, indent=4, ensure_ascii=False)
+
+
+    a = []
+    for po in final_ics:
+        if po['name'] in a:
+            print(po['name'])
+        else:
+            a.append(po['name'])
 
 if __name__ == '__main__':
     remove_duplicate_ic()

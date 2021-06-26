@@ -29,4 +29,8 @@
 1. 国土数値情報 高速道路時系列データをダウンロード
 2. ダウンロードしたファイルを解凍し，N06-19_Joint.geojsonをこのディレクトリ上に配置
 4. highways_graph.jsonを準備
-5. generate_ic_json.py, remove_duplication.py, generate_joint_graph.py, remove_duplicate_ic.pyの順に実行
+5. generate_ic_json.py, remove_duplication.py, remove_duplicate_ic.py, generate_joint_graph.py の順に実行
+6. generate_joint_graph.py実行時に表示されるICたちは上手く重複除去ができてゐない恐れがある．ので，手動でfinal_interchanges.jsonを修正する(最悪)．確認してゐるものは以下
+   * 沼田: 沼田(深川沼田道路)，沼田(沼田幌糠道路)がどちらか一方になってしまふので，コピィする．
+   * 福岡: 福岡(福岡高速4号線)が2個でき，福岡(九州縦貫自動車道鹿児島線)がない．場所はほぼ同一なのでどちらか一方を変更する．
+   * 大野: 大野(広島岩国道路)が2個でき，大野(永平寺大野道路)がない．経度が135度を超えてゐる方を永平寺大野道路に変更する．
