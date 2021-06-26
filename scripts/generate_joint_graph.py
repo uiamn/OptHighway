@@ -87,7 +87,7 @@ def generate_joint_graph(
 
         result_graph[k] = res_value
 
-    with open('dist/joints_graph2.json', 'w') as f:
+    with open('dist/joints_graph.json', 'w') as f:
         json.dump(result_graph, f, indent=4, ensure_ascii=False)
 
 
