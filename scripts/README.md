@@ -6,6 +6,7 @@
 ### generate_ic_json.py
 * N06-19_Joint.geojsonから全ICの座標が記載されたJSONファイルを作成するスクリプト
 * 作成されるJSONファイル名はinterchanges.json
+* これにもIC名の重複が含まれる
 
 ### highways_graph.json
 * 各ICおよびJCT間の隣接関係をグラフにしたJSONファイル
@@ -20,9 +21,12 @@
 * new_graph.jsonに距離情報を付加するスクリプト
 * 作成されるJSONファイル名はjoints_graph.json
 
+### remove_duplicate_ic.py
+* interchanges.jsonの重複を取り除くスクリプト
+* 作成されるJSONファイル名はfinal_interchanges.json
 
 ## 使ひ方
 1. 国土数値情報 高速道路時系列データをダウンロード
 2. ダウンロードしたファイルを解凍し，N06-19_Joint.geojsonをこのディレクトリ上に配置
 4. highways_graph.jsonを準備
-5. generate_ic_json.py, remove_duplication.py, generate_joint_graph.pyの順に実行
+5. generate_ic_json.py, remove_duplication.py, generate_joint_graph.py, remove_duplicate_ic.pyの順に実行

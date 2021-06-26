@@ -20,7 +20,7 @@ for v in ics:
     if v['name'] in a:
         x1, y1 = v['point']
         x2, y2 = coord[v['name']]
-        if (d := dist(x1, y1, x2, y2)) > 0.001:
+        if (d := dist(x1, y1, x2, y2)) > 0.1:
             candidate.append(v['name'])
     else:
         a.append(v['name'])
