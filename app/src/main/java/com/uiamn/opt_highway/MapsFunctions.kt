@@ -44,7 +44,7 @@ class MapsFunctions(geoApiContext: GeoApiContext) {
     }
 
     fun obtainNearestInterChange(activity: Activity, latLng: LatLng): Structures.LatLngWithName {
-        val inputStream = activity.resources.assets.open("interchanges.json")
+        val inputStream = activity.resources.assets.open("final_interchanges.json")
         val br = BufferedReader(InputStreamReader(inputStream))
         val jsonText = br.readText()
         val interChanges = JSONArray(jsonText)
