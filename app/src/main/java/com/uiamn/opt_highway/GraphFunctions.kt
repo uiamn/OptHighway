@@ -90,10 +90,11 @@ class GraphFunctions(activity: Activity) {
         var resultICNames = arrayListOf(goal)
         while(node!!.name != start) {
             node = dijkstra[node.preName]
-            resultICNames.add(node!!.name)
+            if(!node!!.name.endsWith("JCT")) resultICNames.add(node!!.name)
         }
+
+        resultICNames.reverse()
 
         return resultICNames
     }
-
 }
