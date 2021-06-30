@@ -157,8 +157,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private val destCoordinate = destCoordinate
 
         override fun run() {
-            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
-            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+            // TODO: API消費量を抑へるためにダミーデータにしてゐる
+//            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
+//            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+            val deptNearestIC = Structures.LatLngWithName("用賀", LatLng(35.6124215,139.6253779))
+            val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
+            val gf = GraphFunctions(activity)
+            val po = gf.searchMinimumPath(deptNearestIC.name, destNearestIC.name)
 
             handler.sendMessage(handler.obtainMessage(WhatEnum.NIC_RESULT.v, listOf(deptNearestIC, destNearestIC)))
         }
