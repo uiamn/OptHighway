@@ -20,6 +20,9 @@ import com.google.android.gms.maps.model.*
 
 import com.google.maps.GeoApiContext
 import java.lang.ref.WeakReference
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDateTime
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -61,7 +64,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-            moveCameraToCurrentPosition()
+            Log.d("aaaaaa", "fugafuga")
+            val po = findViewById<EditText>(R.id.deptTimeInput).text.toString()
+            val pa = findViewById<EditText>(R.id.arriveTimeInput).text.toString()
+
+            Log.d("aaaaa", "bbbbbbb")
+
+            Log.d("arrive", pa)
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
@@ -107,6 +116,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 ))
 
                 activity.addMarkerAtDeptAndDestPoint(msg.obj as Structures.DeptDestLatLng)
+
+                // TODO: すぐには実行しない
                 GetNearestInterChangeThread(this, activity.mapsAPI, activity, po.dept, po.dest).start()
             } else if (msg.what == WhatEnum.NIC_RESULT.v) {
                 // 出発地点，目的地点に最も近いICにピンを建てる
@@ -120,6 +131,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 activity.addMarker(MarkerOptions().position(icNearestToDest.point).title(icNearestToDest.name).icon(
                     BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
                 ))
+
+                // TODO: すぐには実行しない
+                GetMinimumPathThread(this, activity, icNearestToDept.name, icNearestToDest.name).start()
+            } else if (msg.what == WhatEnum.MP_RESULT.v) {
+                val po = msg.obj as ArrayList<String>
+
+                // TODO: ダミーデータ
+                val deptLatLng = LatLng(35.6124215, 139.6253779)
+                val destLatLng = LatLng(34.9792769, 138.3786288)
+                val deptTime = Instant.now()
+                val arrivalTime = Instant.now().plusSeconds(3600 * 3)
+
+
+                // TODO: すぐには実行しない
+                GetOptimalHighwaySectionThread(this, activity.mapsAPI, po, deptLatLng, destLatLng, deptTime, arrivalTime).start()
             }
         }
     }
@@ -160,14 +186,59 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // TODO: API消費量を抑へるためにダミーデータにしてゐる
 //            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
 //            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
-            val deptNearestIC = Structures.LatLngWithName("用賀", LatLng(35.6124215,139.6253779))
+            val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
             val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
-            val gf = GraphFunctions(activity)
-            val po = gf.searchMinimumPath(deptNearestIC.name, destNearestIC.name)
 
             handler.sendMessage(handler.obtainMessage(WhatEnum.NIC_RESULT.v, listOf(deptNearestIC, destNearestIC)))
         }
     }
+
+    private class GetMinimumPathThread(
+            handler: HandlerInMapsActivity,
+            activity: Activity,
+            inICName: String,
+            outICName: String
+    ) : Thread() {
+        // 流入ICから流出ICまでの最も短い高速道路の経路を探索するスレッド
+        private val handler = handler
+        private val activity = activity
+        private val inICName = inICName
+        private val outICName = outICName
+
+        override fun run() {
+            val gf = GraphFunctions(activity)
+            val minimumPath = gf.searchMinimumPath(inICName, outICName)
+
+            Log.d("a", minimumPath.toString())
+            handler.sendMessage(handler.obtainMessage(WhatEnum.MP_RESULT.v, minimumPath))
+        }
+    }
+
+
+    private class GetOptimalHighwaySectionThread(
+            handler: HandlerInMapsActivity,
+            mapsAPI: MapsFunctions,
+            icPath: ArrayList<String>,
+            deptLatLng: LatLng,
+            destLatLng: LatLng,
+            deptTime: Instant,
+            arrivalTime: Instant
+    ) : Thread() {
+        // 入力された地点名から，緯度経度を取得するスレッド
+        private val mapsAPI = mapsAPI
+        private val handler = handler
+        private val icPath = icPath
+        private val deptLatLng = deptLatLng
+        private val destLatLng = destLatLng
+        private val deptTime = deptTime
+        private val arrivalTime = arrivalTime
+
+        override fun run() {
+            mapsAPI.obtainHighwaySection(icPath, deptLatLng, destLatLng, deptTime, arrivalTime)
+//            handler.sendMessage(handler.obtainMessage(WhatEnum.GLLFPN_RESULT.v, latLngs))
+        }
+    }
+
 
 
     private fun moveCameraToCurrentPosition() {
