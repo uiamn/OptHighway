@@ -3,6 +3,8 @@ package com.uiamn.opt_highway
 import android.content.pm.PackageManager
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -64,13 +66,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-            Log.d("aaaaaa", "fugafuga")
-            val po = findViewById<EditText>(R.id.deptTimeInput).text.toString()
-            val pa = findViewById<EditText>(R.id.arriveTimeInput).text.toString()
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
+            intent.setClassName(
+                "com.google.android.apps.maps",
+                "com.google.android.maps.MapsActivity"
+            )
 
-            Log.d("aaaaa", "bbbbbbb")
-
-            Log.d("arrive", pa)
+            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=Space+Needle+Seattle+WA&destination=Pike+Place+Market+Seattle+WA&travelmode=bicycling")
+            startActivity(intent)
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
@@ -234,8 +238,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private val arrivalTime = arrivalTime
 
         override fun run() {
-            mapsAPI.obtainHighwaySection(icPath, deptLatLng, destLatLng, deptTime, arrivalTime)
-//            handler.sendMessage(handler.obtainMessage(WhatEnum.GLLFPN_RESULT.v, latLngs))
+            val optSection = mapsAPI.obtainHighwaySection(icPath, deptLatLng, destLatLng, deptTime, arrivalTime)
+            handler.sendMessage(handler.obtainMessage(WhatEnum.OPT_SEC_RESULT.v, optSection))
         }
     }
 

@@ -10,13 +10,11 @@ import com.google.maps.DirectionsApi
 
 import com.google.maps.GeoApiContext
 import com.google.maps.model.DirectionsResult
-import com.google.maps.model.DirectionsRoute
 import org.json.JSONArray
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.Duration
 import java.time.Instant
-import java.time.LocalTime
 
 class MapsFunctions(geoApiContext: GeoApiContext) {
     private val geoApiContext = geoApiContext
@@ -82,7 +80,6 @@ class MapsFunctions(geoApiContext: GeoApiContext) {
     private fun getDurationSeconds(result: DirectionsResult): Long {
         return result.routes[0].legs[0].duration.inSeconds
     }
-
 
     fun obtainHighwaySection(icPath: ArrayList<String>, deptLatLng: LatLng, destLatLng: LatLng, deptTime: Instant, arrivalTime: Instant): Structures.HighwaySection? {
         val deptLatLngStr = "%f,%f".format(deptLatLng.latitude, deptLatLng.longitude)
@@ -167,6 +164,7 @@ class MapsFunctions(geoApiContext: GeoApiContext) {
         }
 
         Log.d("ENTRY TO HIGHWAY AT", icPath[pivot])
-        return null
+        // TODO: 高速道路料金を計算して返す
+        return Structures.HighwaySection(icPath[pivot], icPath.last(), 0L)
     }
 }
