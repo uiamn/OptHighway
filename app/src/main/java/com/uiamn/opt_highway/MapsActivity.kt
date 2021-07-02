@@ -66,15 +66,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.setClassName(
-                "com.google.android.apps.maps",
-                "com.google.android.maps.MapsActivity"
-            )
+            val intent = Intent(this, PlaceSuggestActivity::class.java)
+            // TODO: requestCodeを直す
+            startActivityForResult(intent, 1234)
 
-            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=Space+Needle+Seattle+WA&destination=Pike+Place+Market+Seattle+WA&travelmode=bicycling")
-            startActivity(intent)
+
+//            intent.action = Intent.ACTION_VIEW
+//            intent.setClassName(
+//                "com.google.android.apps.maps",
+//                "com.google.android.maps.MapsActivity"
+//            )
+//
+//            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=Space+Needle+Seattle+WA&destination=Pike+Place+Market+Seattle+WA&travelmode=bicycling")
+//            startActivity(intent)
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
