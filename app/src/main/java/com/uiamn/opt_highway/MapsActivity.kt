@@ -67,6 +67,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
             val intent = Intent(this, PlaceSuggestActivity::class.java)
+
+            intent.putExtra(ExtraEnum.GEO_API_KEY.v, getString(R.string.google_maps_key))
+
             // TODO: requestCodeを直す
             startActivityForResult(intent, 1234)
 
