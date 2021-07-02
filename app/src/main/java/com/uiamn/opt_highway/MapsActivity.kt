@@ -31,6 +31,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private var REQUEST_PERMISSION = 1000
 
+    private val DEPT_SUGGEST_REQ = 1234
+    private val DEST_SUGGEST_REQ = 1235
+
     private lateinit var locationClient: FusedLocationProviderClient
     private lateinit var request: LocationRequest
     private lateinit var callback: LocationCallback
@@ -87,6 +90,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
             getLatLngFromPositionName()
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val suggestResult = data!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v)
+
+        // TODO: departureなのかdestinationなのかわける
+        findViewById<EditText>(R.id.departureInput).setText(suggestResult)
     }
 
     private fun getLatLngFromPositionName() {

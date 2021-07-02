@@ -1,5 +1,6 @@
 package com.uiamn.opt_highway
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -38,6 +39,14 @@ class PlaceSuggestActivity : AppCompatActivity() {
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, arrayListOf())
         val listView = findViewById<ListView>(R.id.suggestedPlaces)
         listView.adapter = adapter
+
+        listView.setOnItemClickListener {parent, _, pos, _ ->
+            val t = parent.getItemAtPosition(pos).toString()
+            val data = Intent()
+            data.putExtra(ExtraEnum.SUGGEST_RESULT.v, t)
+            setResult(RESULT_OK, data)
+            finish()
+        }
     }
 
     private fun updateSuggestedList(suggested: List<String>) {
