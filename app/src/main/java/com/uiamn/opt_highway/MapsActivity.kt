@@ -62,7 +62,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 .apiKey(getString(R.string.google_maps_key))
                 .build()
 
-        mapsAPI = MapsFunctions(geoApiContext)
+        mapsAPI = MapsFunctions(this, geoApiContext)
 
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
@@ -145,11 +145,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val deptLatLng = LatLng(35.6124215, 139.6253779)
                 val destLatLng = LatLng(34.9792769, 138.3786288)
                 val deptTime = Instant.now()
-                val arrivalTime = Instant.now().plusSeconds(3600 * 3)
+                val arrivalTime = Instant.now().plusSeconds(3600 * 4)
 
 
                 // TODO: すぐには実行しない
                 GetOptimalHighwaySectionThread(this, activity.mapsAPI, po, deptLatLng, destLatLng, deptTime, arrivalTime).start()
+            } else if (msg.what == WhatEnum.OPT_SEC_RESULT.v) {
+                val result = msg.obj as Structures.HighwaySection
+
+                activity.addMarker(MarkerOptions().position(result.entryIC.point).title(result.entryIC.name).icon(
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                ))
+                activity.addMarker(MarkerOptions().position(result.outIC.point).title(result.outIC.name).icon(
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+                ))
+
             }
         }
     }
@@ -188,8 +198,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         override fun run() {
             // TODO: API消費量を抑へるためにダミーデータにしてゐる
-//            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
-//            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+//            val deptNearestIC = mapsAPI.obtainNearestInterChange(deptCoordinate)
+//            val destNearestIC = mapsAPI.obtainNearestInterChange(destCoordinate)
             val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
             val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
 
