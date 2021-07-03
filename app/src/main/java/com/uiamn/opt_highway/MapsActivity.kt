@@ -113,6 +113,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
         }
 
+        findViewById<Button>(R.id.setCurrentPosButton).setOnClickListener {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return@setOnClickListener
+            }
+            locationClient.lastLocation.addOnCompleteListener { task ->
+                if(!task.isSuccessful || task.result == null) {
+                    Log.e("location", "位置情報の取得に失敗")
+                    return@addOnCompleteListener
+                }
+
+                val location = task.result
+                val ll = LatLng(location.latitude, location.longitude)
+                deptLatLng = ll
+                findViewById<EditText>(R.id.departureInput).setText("(現在地)")
+            }
+        }
+
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
             val deptArriveTime = getInputtedTime() ?: return@setOnClickListener
             deptTime = deptArriveTime.first
