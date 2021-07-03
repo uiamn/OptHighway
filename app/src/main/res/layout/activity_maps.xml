@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:focusableInTouchMode="false"
-                android:hint="出発地"
+                android:hint="@string/departure"
                 android:inputType="text"
                 app:layout_constraintEnd_toStartOf="@+id/setCurrentPosButton"
                 app:layout_constraintStart_toStartOf="parent"
@@ -36,7 +36,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="現在地"
+                android:text="@string/current_position"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:focusableInTouchMode="false"
-                android:hint="目的地"
+                android:hint="@string/destination"
                 android:inputType="text"
                 app:layout_constraintEnd_toEndOf="@+id/departureInput"
                 app:layout_constraintStart_toStartOf="parent"
@@ -58,6 +58,7 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:focusableInTouchMode="false"
+                android:hint="@string/depart_time"
                 android:inputType="text"
                 app:layout_constraintEnd_toStartOf="@+id/arriveTimeInput"
                 app:layout_constraintStart_toStartOf="parent"
@@ -79,6 +80,7 @@
                 android:layout_weight="1"
                 android:ems="10"
                 android:focusableInTouchMode="false"
+                android:hint="@string/arrival_time"
                 android:inputType="text"
                 app:layout_constraintEnd_toStartOf="@+id/startSearchButton"
                 app:layout_constraintStart_toEndOf="@+id/deptTimeInput"
@@ -89,7 +91,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="検索"
+                android:text="@string/search"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/destinationInput" />
         </androidx.constraintlayout.widget.ConstraintLayout>

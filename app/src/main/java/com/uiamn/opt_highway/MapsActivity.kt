@@ -59,7 +59,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
     private lateinit var geoApiContext: GeoApiContext
     private lateinit var mapsAPI: MapsFunctions
 
-    private val spinner = ProgressDialog.newInstance("最適な経路を探索しています．．．")
+    private lateinit var spinner: ProgressDialog
 
     private val handler = MapsActivity.HandlerInMapsActivity(this)
 
@@ -86,6 +86,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                 .build()
 
         mapsAPI = MapsFunctions(this, geoApiContext)
+
+        spinner = ProgressDialog.newInstance(resources.getString(R.string.spinner_text))
 
         findViewById<EditText>(R.id.departureInput).setOnClickListener {
             val intent = Intent(this, PlaceSuggestActivity::class.java)
@@ -126,7 +128,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                 val location = task.result
                 val ll = LatLng(location.latitude, location.longitude)
                 deptLatLng = ll
-                findViewById<EditText>(R.id.departureInput).setText("(現在地)")
+                findViewById<EditText>(R.id.departureInput).setText("(%s)".format(resources.getString(R.string.current_position)))
             }
         }
 

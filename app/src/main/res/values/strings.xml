@@ -1,4 +1,12 @@
 <resources>
-    <string name="app_name">My Application</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="app_name">SmartHighway</string>
+    <string name="title_activity_maps">SmartHighway</string>
+    <string name="departure">departure</string>
+    <string name="destination">destination</string>
+    <string name="depart_time">depart time</string>
+    <string name="arrival_time">arrival time</string>
+    <string name="current_position">current position</string>
+    <string name="search">search</string>
+    <string name="suggest_input_hint">Address, building name, etc.</string>
+    <string name="spinner_text">Searching for the best path ...</string>
 </resources>

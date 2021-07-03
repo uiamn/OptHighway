@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">SmartHighway</string>
+    <string name="title_activity_maps">SmartHighway</string>
+    <string name="departure">出発地</string>
+    <string name="destination">目的地</string>
+    <string name="depart_time">出発時刻</string>
+    <string name="arrival_time">到着時刻</string>
+    <string name="current_position">現在地</string>
+    <string name="search">検索</string>
+    <string name="suggest_input_hint">住所や建物名を入力</string>
+    <string name="spinner_text">最適な経路を探索しています．．．</string>
+</resources>
