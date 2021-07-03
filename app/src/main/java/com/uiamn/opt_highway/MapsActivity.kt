@@ -43,6 +43,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
     private lateinit var deptLatLng: LatLng
     private lateinit var destLatLng: LatLng
+    private lateinit var deptTime: Instant
+    private lateinit var arriveTime: Instant
 
     private var isSelectedDeptTime = false
 
@@ -110,6 +112,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
             val deptArriveTime = getInputtedTime() ?: return@setOnClickListener
+            deptTime = deptArriveTime.first
+            arriveTime = deptArriveTime.second
 
             if(::deptLatLng.isInitialized && ::destLatLng.isInitialized) {
                 GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
@@ -119,7 +123,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
     }
 
-    fun getInputtedTime(): Pair<Instant, Instant>? {
+    private fun getInputtedTime(): Pair<Instant, Instant>? {
         val deptTimeText = findViewById<EditText>(R.id.deptTimeInput).text.toString()
         val arriveTimeText = findViewById<EditText>(R.id.arriveTimeInput).text.toString()
 
@@ -233,19 +237,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                     BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
                 ))
 
-                // TODO: すぐには実行しない
                 GetMinimumPathThread(this, activity, icNearestToDept.name, icNearestToDest.name).start()
             } else if (msg.what == WhatEnum.MP_RESULT.v) {
                 val po = msg.obj as ArrayList<String>
 
-                // TODO: ダミーデータ
-                val deptLatLng = LatLng(35.6124215, 139.6253779)
-                val destLatLng = LatLng(34.9792769, 138.3786288)
-                val deptTime = Instant.now()
-                val arrivalTime = Instant.now().plusSeconds(3600 * 3)
+                val deptLatLng = activity.deptLatLng
+                val destLatLng = activity.destLatLng
+                val deptTime = activity.deptTime
+                val arrivalTime = activity.arriveTime
 
-
-                // TODO: すぐには実行しない
                 GetOptimalHighwaySectionThread(this, activity.mapsAPI, po, deptLatLng, destLatLng, deptTime, arrivalTime).start()
             }
         }
