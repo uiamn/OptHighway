@@ -3,8 +3,11 @@ package com.uiamn.opt_highway
 import android.content.pm.PackageManager
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.TimePickerDialog
+import android.content.DialogInterface
 import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -102,14 +105,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-//            intent.action = Intent.ACTION_VIEW
-//            intent.setClassName(
-//                "com.google.android.apps.maps",
-//                "com.google.android.maps.MapsActivity"
-//            )
-//
-//            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=Space+Needle+Seattle+WA&destination=Pike+Place+Market+Seattle+WA&travelmode=bicycling")
-//            startActivity(intent)
+            intent.action = Intent.ACTION_VIEW
+            intent.setClassName(
+                "com.google.android.apps.maps",
+                "com.google.android.maps.MapsActivity"
+            )
+
+            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=35.610631,139.681280&destination=35.29468271,138.94878343&travelmode=driving&avoid=tolls,ferries")
+            startActivity(intent)
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
@@ -125,6 +128,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             }
         }
     }
+
+    private fun launchGoogleMapApp(entryICLatLng: LatLng) {
+        intent.action = Intent.ACTION_VIEW
+        intent.setClassName(
+                "com.google.android.apps.maps",
+                "com.google.android.maps.MapsActivity"
+        )
+
+        intent.data = Uri.parse(
+                "https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=driving&avoid=tolls,ferries"
+                        .format(deptLatLng.latitude, deptLatLng.longitude, entryICLatLng.latitude, entryICLatLng.longitude))
+        startActivity(intent)
+    }
+
 
     private fun getInputtedTime(): Pair<Instant, Instant>? {
         val deptTimeText = findViewById<EditText>(R.id.deptTimeInput).text.toString()
@@ -204,12 +221,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             if (msg.what == activity.WHAT_THREAD_RESULT) {
                 val result = msg.obj as Structures.HighwaySection
 
-                activity.addMarker(MarkerOptions().position(result.entryIC.point).title(result.entryIC.name).icon(
-                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
-                ))
-                activity.addMarker(MarkerOptions().position(result.outIC.point).title(result.outIC.name).icon(
-                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
-                ))
+                val dialog = AlertDialog.Builder(activity).setMessage("最適なルートが見つかりました．GoogleMapを起動しますか？")
+                        .setPositiveButton("はい",
+                                DialogInterface.OnClickListener { _, _ ->
+                                    activity.launchGoogleMapApp(result.entryIC.point)
+                                })
+                        .setNegativeButton("いいえ",
+                                DialogInterface.OnClickListener { _, _ ->
+                                    activity.addMarker(MarkerOptions().position(result.entryIC.point).title(result.entryIC.name).icon(
+                                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                                    ))
+                                    activity.addMarker(MarkerOptions().position(result.outIC.point).title(result.outIC.name).icon(
+                                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+                                    ))
+                                    activity.mMap.moveCamera(CameraUpdateFactory.newLatLng(result.entryIC.point))
+                                    activity.mMap.moveCamera(CameraUpdateFactory.zoomTo(15F))
+                                })
+                        .create()
+                dialog.show()
             }
         }
     }

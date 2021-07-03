@@ -55,6 +55,13 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
     }
 
     fun obtainHighwaySection(icPath: ArrayList<String>, deptLatLng: LatLng, destLatLng: LatLng, deptTime: Instant, arrivalTime: Instant): Structures.HighwaySection? {
+        // TODO: ダミーデータ
+        return Structures.HighwaySection(
+                Structures.LatLngWithName("東京", LatLng(35.628044, 139.620155)),
+                Structures.LatLngWithName("御殿場", LatLng(35.29468271, 138.94878343)),
+                0L
+        )
+
         val deptLatLngStr = "%f,%f".format(deptLatLng.latitude, deptLatLng.longitude)
         val destLatLngStr = "%f,%f".format(destLatLng.latitude, destLatLng.longitude)
         val icFmt = "%sインターチェンジ"
