@@ -3,8 +3,8 @@ package com.uiamn.opt_highway
 import android.content.pm.PackageManager
 import android.Manifest
 import android.app.Activity
+import android.app.TimePickerDialog
 import android.content.Intent
-import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -16,6 +16,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.addTextChangedListener
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
@@ -24,9 +25,8 @@ import com.google.maps.GeoApiContext
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.time.Instant
-import java.time.LocalDateTime
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.OnTimeSetListener {
 
     private lateinit var mMap: GoogleMap
     private var REQUEST_PERMISSION = 1000
@@ -38,10 +38,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var request: LocationRequest
     private lateinit var callback: LocationCallback
 
+    private lateinit var deptLatLng: LatLng
+    private lateinit var destLatLng: LatLng
+
+    private var isSelectedDeptTime = false
+
     private lateinit var geoApiContext: GeoApiContext
     private lateinit var mapsAPI: MapsFunctions
 
-    private val getLatLngFromPosNameHandler = MapsActivity.HandlerInMapsActivity(this)
+    private val handler = MapsActivity.HandlerInMapsActivity(this)
 
     companion object {
         var PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -79,6 +84,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             startActivityForResult(intent, DEST_SUGGEST_REQ)
         }
 
+        findViewById<EditText>(R.id.deptTimeInput).setOnClickListener {
+            isSelectedDeptTime = true
+            TimePicker().show(supportFragmentManager, "timePicker")
+        }
+
+        findViewById<EditText>(R.id.arriveTimeInput).setOnClickListener {
+            isSelectedDeptTime = false
+            TimePicker().show(supportFragmentManager, "timePicker")
+        }
+
         findViewById<Button>(R.id.reload_button).setOnClickListener {
             val intent = Intent(this, PlaceSuggestActivity::class.java)
 
@@ -99,7 +114,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
-            getLatLngFromPositionName()
+            if(::deptLatLng.isInitialized && ::destLatLng.isInitialized) {
+                GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
+            } else {
+                Toast.makeText(this, "先に出発地と目的地を入力して下さい", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -114,8 +133,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 findViewById<EditText>(editTextId).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT_NAME.v))
                 val lat = it.getDoubleExtra(ExtraEnum.SUGGEST_RESULT_LAT.v, 0.0)
                 val lng = it.getDoubleExtra(ExtraEnum.SUGGEST_RESULT_LNG.v, 0.0)
-                val marker = MarkerOptions().position(LatLng(lat, lng)).title(if(isDept) "出発地" else "目的地").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                val latLng = LatLng(lat, lng)
+                val marker = MarkerOptions().position(latLng).title(if(isDept) "出発地" else "目的地").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
                 addMarkerAndZooming(marker)
+
+                if(isDept) {
+                    deptLatLng = latLng
+                } else {
+                    destLatLng = latLng
+                }
             }
         }
     }
@@ -124,7 +150,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val deptText = findViewById<EditText>(R.id.departureInput).text.toString()
         val destText = findViewById<EditText>(R.id.destinationInput).text.toString()
 
-        GetLatLngFromPositionNameThread(getLatLngFromPosNameHandler, mapsAPI, deptText, destText).start()
+        GetLatLngFromPositionNameThread(handler, mapsAPI, deptText, destText).start()
     }
 
     private fun addMarkerAtDeptAndDestPoint(v: Structures.DeptDestLatLng) {
@@ -150,21 +176,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 return
             }
 
-            if (msg.what == WhatEnum.GLLFPN_RESULT.v) {
-                // 出発地点，目的地点の名称から取得した座標にピンを建てる
-                val po = msg.obj as Structures.DeptDestLatLng
-                activity.addMarker(MarkerOptions().position(po.dept).title("出発地").icon(
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                ))
-                activity.addMarker(MarkerOptions().position(po.dest).title("目的地").icon(
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                ))
-
-                activity.addMarkerAtDeptAndDestPoint(msg.obj as Structures.DeptDestLatLng)
-
-                // TODO: すぐには実行しない
-                GetNearestInterChangeThread(this, activity.mapsAPI, activity, po.dept, po.dest).start()
-            } else if (msg.what == WhatEnum.NIC_RESULT.v) {
+//            if (msg.what == WhatEnum.GLLFPN_RESULT.v) {
+//                // 出発地点，目的地点の名称から取得した座標にピンを建てる
+//                val po = msg.obj as Structures.DeptDestLatLng
+//                activity.addMarker(MarkerOptions().position(po.dept).title("出発地").icon(
+//                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+//                ))
+//                activity.addMarker(MarkerOptions().position(po.dest).title("目的地").icon(
+//                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+//                ))
+//
+//                activity.addMarkerAtDeptAndDestPoint(msg.obj as Structures.DeptDestLatLng)
+//
+//                // TODO: すぐには実行しない
+//                GetNearestInterChangeThread(this, activity.mapsAPI, activity, po.dept, po.dest).start()
+//            } else
+            if (msg.what == WhatEnum.NIC_RESULT.v) {
                 // 出発地点，目的地点に最も近いICにピンを建てる
                 val po = msg.obj as List<*>
                 val icNearestToDept = po[0] as Structures.LatLngWithName
@@ -228,11 +255,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private val destCoordinate = destCoordinate
 
         override fun run() {
-            // TODO: API消費量を抑へるためにダミーデータにしてゐる
-//            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
-//            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
-            val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
-            val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
+//             TODO: API消費量を抑へるためにダミーデータにしてゐる
+            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
+            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+//            val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
+//            val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
 
             handler.sendMessage(handler.obtainMessage(WhatEnum.NIC_RESULT.v, listOf(deptNearestIC, destNearestIC)))
         }
@@ -345,5 +372,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap = googleMap
 //        mMap.isMyLocationEnabled = true;
         moveCameraToCurrentPosition()
+    }
+
+    override fun onTimeSet(view: android.widget.TimePicker?, hourOfDay: Int, minute: Int) {
+        Log.d("hoge", minute.toString())
+        findViewById<EditText>(if(isSelectedDeptTime)R.id.deptTimeInput else R.id.arriveTimeInput).setText("%d:%d".format(hourOfDay, minute))
     }
 }
