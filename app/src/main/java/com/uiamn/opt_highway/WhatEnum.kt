@@ -5,5 +5,6 @@ enum class WhatEnum(val v: Int) {
     NIC_RESULT(2),
     MP_RESULT(3),
     OPT_SEC_RESULT(4),
-    SUGGEST_RESULT(5)
+    SUGGEST_RESULT(5),
+    PLACE_SUGGEST_LATLNG_RESULT(6)
 }

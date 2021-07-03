@@ -106,13 +106,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if(requestCode == DEPT_SUGGEST_REQ) {
+        if(requestCode == DEPT_SUGGEST_REQ || requestCode == DEST_SUGGEST_REQ) {
+            val isDept = requestCode == DEPT_SUGGEST_REQ
+
+            val editTextId = if(isDept) R.id.departureInput else R.id.destinationInput
             data?.let {
-                findViewById<EditText>(R.id.departureInput).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
-            }
-        } else if(requestCode == DEST_SUGGEST_REQ) {
-            data?.let {
-                findViewById<EditText>(R.id.destinationInput).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
+                findViewById<EditText>(editTextId).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT_NAME.v))
+                val lat = it.getDoubleExtra(ExtraEnum.SUGGEST_RESULT_LAT.v, 0.0)
+                val lng = it.getDoubleExtra(ExtraEnum.SUGGEST_RESULT_LNG.v, 0.0)
+                val marker = MarkerOptions().position(LatLng(lat, lng)).title(if(isDept) "出発地" else "目的地").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                addMarkerAndZooming(marker)
             }
         }
     }
@@ -120,9 +123,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun getLatLngFromPositionName() {
         val deptText = findViewById<EditText>(R.id.departureInput).text.toString()
         val destText = findViewById<EditText>(R.id.destinationInput).text.toString()
-
-        Log.d("aaaaa", deptText)
-        Log.d("bbbbb", destText)
 
         GetLatLngFromPositionNameThread(getLatLngFromPosNameHandler, mapsAPI, deptText, destText).start()
     }
@@ -132,6 +132,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun addMarker(m: MarkerOptions) {
+        mMap.addMarker(m)
+    }
+
+    private fun addMarkerAndZooming(m: MarkerOptions) {
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(m.position))
+        mMap.moveCamera(CameraUpdateFactory.zoomTo(15F))
         mMap.addMarker(m)
     }
 
