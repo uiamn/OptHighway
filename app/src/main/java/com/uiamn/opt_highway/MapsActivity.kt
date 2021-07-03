@@ -108,11 +108,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         if(requestCode == DEPT_SUGGEST_REQ) {
             data?.let {
-                findViewById<EditText>(R.id.departureInput).setText(it!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
+                findViewById<EditText>(R.id.departureInput).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
             }
         } else if(requestCode == DEST_SUGGEST_REQ) {
             data?.let {
-                findViewById<EditText>(R.id.destinationInput).setText(it!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
+                findViewById<EditText>(R.id.destinationInput).setText(it.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
             }
         }
     }
