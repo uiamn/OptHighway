@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:autofillHints=""
-        android:hint="hoge"
+        android:hint="住所や建物名を入力"
         android:inputType="text"
         app:layout_constraintEnd_toStartOf="@+id/reqSuggestButton"
         app:layout_constraintStart_toStartOf="parent"

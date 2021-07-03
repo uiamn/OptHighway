@@ -67,6 +67,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         mapsAPI = MapsFunctions(geoApiContext)
 
+        findViewById<EditText>(R.id.departureInput).setOnClickListener {
+            val intent = Intent(this, PlaceSuggestActivity::class.java)
+            intent.putExtra(ExtraEnum.GEO_API_KEY.v, getString(R.string.google_maps_key))
+            startActivityForResult(intent, DEPT_SUGGEST_REQ)
+        }
+
+        findViewById<EditText>(R.id.destinationInput).setOnClickListener {
+            val intent = Intent(this, PlaceSuggestActivity::class.java)
+            intent.putExtra(ExtraEnum.GEO_API_KEY.v, getString(R.string.google_maps_key))
+            startActivityForResult(intent, DEST_SUGGEST_REQ)
+        }
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
             val intent = Intent(this, PlaceSuggestActivity::class.java)
@@ -94,10 +105,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        val suggestResult = data!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v)
 
-        // TODO: departureなのかdestinationなのかわける
-        findViewById<EditText>(R.id.departureInput).setText(suggestResult)
+        if(requestCode == DEPT_SUGGEST_REQ) {
+            data?.let {
+                findViewById<EditText>(R.id.departureInput).setText(it!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
+            }
+        } else if(requestCode == DEST_SUGGEST_REQ) {
+            data?.let {
+                findViewById<EditText>(R.id.destinationInput).setText(it!!.getStringExtra(ExtraEnum.SUGGEST_RESULT.v))
+            }
+        }
     }
 
     private fun getLatLngFromPositionName() {
