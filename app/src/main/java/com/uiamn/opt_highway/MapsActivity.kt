@@ -353,8 +353,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             val location = task.result
             val ll = LatLng(location.latitude, location.longitude)
             mMap.moveCamera(CameraUpdateFactory.newLatLng(ll))
-            mMap.addMarker(MarkerOptions().position(ll).title("現在地"))
             mMap.moveCamera(CameraUpdateFactory.zoomTo(15F))
+            mMap.isMyLocationEnabled = true
         }
     }
 
@@ -397,7 +397,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-//        mMap.isMyLocationEnabled = true;
         moveCameraToCurrentPosition()
     }
 
