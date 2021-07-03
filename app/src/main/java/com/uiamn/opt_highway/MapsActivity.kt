@@ -25,6 +25,9 @@ import com.google.maps.GeoApiContext
 import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.OnTimeSetListener {
 
@@ -95,14 +98,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-            val intent = Intent(this, PlaceSuggestActivity::class.java)
-
-            intent.putExtra(ExtraEnum.GEO_API_KEY.v, getString(R.string.google_maps_key))
-
-            // TODO: requestCodeを直す
-            startActivityForResult(intent, 1234)
-
-
 //            intent.action = Intent.ACTION_VIEW
 //            intent.setClassName(
 //                "com.google.android.apps.maps",
@@ -114,12 +109,46 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
+            val deptArriveTime = getInputtedTime() ?: return@setOnClickListener
+
             if(::deptLatLng.isInitialized && ::destLatLng.isInitialized) {
                 GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
             } else {
                 Toast.makeText(this, "先に出発地と目的地を入力して下さい", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    fun getInputtedTime(): Pair<Instant, Instant>? {
+        val deptTimeText = findViewById<EditText>(R.id.deptTimeInput).text.toString()
+        val arriveTimeText = findViewById<EditText>(R.id.arriveTimeInput).text.toString()
+
+        if(deptTimeText == "") {
+            Toast.makeText(this, "出発時刻が入力されていません", Toast.LENGTH_LONG).show()
+            return null
+        } else if(arriveTimeText == "") {
+            Toast.makeText(this, "到着時刻が入力されていません", Toast.LENGTH_LONG).show()
+            return null
+        }
+
+        val nowLocalDate = LocalDate.now()
+        val year = nowLocalDate.year
+        val month = nowLocalDate.monthValue
+        val day = nowLocalDate.dayOfMonth
+
+        val dateText = "%d-%s-%s".format(
+                year,
+                if(month > 10) month.toString() else "0%d".format(month),
+                if(day > 10) day.toString() else "0%d".format(day)
+        )
+
+        val deptInstant = Instant.parse("%sT%s:00Z".format(dateText, deptTimeText))
+        val arriveInstantTemp = Instant.parse("%sT%s:00Z".format(dateText, arriveTimeText))
+
+        // 日付を超える場合
+        val arriveInstant = if(deptInstant.isAfter(arriveInstantTemp)) arriveInstantTemp.plusSeconds(3600 * 24) else arriveInstantTemp
+
+        return Pair(deptInstant, arriveInstant)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -375,7 +404,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
     }
 
     override fun onTimeSet(view: android.widget.TimePicker?, hourOfDay: Int, minute: Int) {
-        Log.d("hoge", minute.toString())
         findViewById<EditText>(if(isSelectedDeptTime)R.id.deptTimeInput else R.id.arriveTimeInput).setText("%d:%d".format(hourOfDay, minute))
     }
 }
