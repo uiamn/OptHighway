@@ -55,13 +55,6 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
     }
 
     fun obtainHighwaySection(icPath: ArrayList<String>, deptLatLng: LatLng, destLatLng: LatLng, deptTime: Instant, arrivalTime: Instant): Structures.HighwaySection? {
-        // TODO: ダミーデータ
-        return Structures.HighwaySection(
-                Structures.LatLngWithName("東京", LatLng(35.628044, 139.620155)),
-                Structures.LatLngWithName("御殿場", LatLng(35.29468271, 138.94878343)),
-                0L
-        )
-
         val deptLatLngStr = "%f,%f".format(deptLatLng.latitude, deptLatLng.longitude)
         val destLatLngStr = "%f,%f".format(destLatLng.latitude, destLatLng.longitude)
         val icFmt = "%sインターチェンジ"
@@ -75,9 +68,8 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
         Log.d("secondsExceptTolls", secondsExceptTolls.toString())
 
         if(arrivalTime.isAfter(deptTime.plusSeconds(secondsExceptTolls))) {
-            // TODO: まともなものを返す
             Log.d("hogehoge", "下道で行っても間に合ひます！")
-            return null
+            return Structures.HighwaySection(null, null, 0L)
         }
 
         // 初めにICの終点から目的地までの高速道路を使用しない所要時間を取得しておく
@@ -170,7 +162,7 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
             if(entryICLatLng != null && outICLatLng != null) break
         }
 
-        return if(entryICLatLng != null && outICLatLng != null) Structures.HighwaySection(Structures.LatLngWithName(entryICName, entryICLatLng), Structures.LatLngWithName(outICName, outICLatLng), 0L)
+        return if(entryICLatLng != null && outICLatLng != null) Structures.HighwaySection(Structures.LatLngWithName(entryICName, entryICLatLng), Structures.LatLngWithName(outICName, outICLatLng), 1L)
         else null
     }
 }

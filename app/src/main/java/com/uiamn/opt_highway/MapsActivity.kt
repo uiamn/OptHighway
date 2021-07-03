@@ -142,6 +142,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         startActivity(intent)
     }
 
+    private fun launchGoogleMapApp() {
+        intent.action = Intent.ACTION_VIEW
+        intent.setClassName(
+                "com.google.android.apps.maps",
+                "com.google.android.maps.MapsActivity"
+        )
+
+        intent.data = Uri.parse(
+                "https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=driving&avoid=tolls,ferries"
+                        .format(deptLatLng.latitude, deptLatLng.longitude, destLatLng.latitude, destLatLng.longitude))
+        startActivity(intent)
+    }
 
     private fun getInputtedTime(): Pair<Instant, Instant>? {
         val deptTimeText = findViewById<EditText>(R.id.deptTimeInput).text.toString()
@@ -219,28 +231,57 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             }
 
             if (msg.what == activity.WHAT_THREAD_RESULT) {
+                if(msg.obj == null) {
+                    Toast.makeText(activity, "高速道路を使っても間に合うことができません", Toast.LENGTH_LONG).show()
+                    return
+                }
+
                 val result = msg.obj as Structures.HighwaySection
 
-                val dialog = AlertDialog.Builder(activity).setMessage("最適なルートが見つかりました．GoogleMapを起動しますか？")
-                        .setPositiveButton("はい",
-                                DialogInterface.OnClickListener { _, _ ->
-                                    activity.launchGoogleMapApp(result.entryIC.point)
-                                })
-                        .setNegativeButton("いいえ",
-                                DialogInterface.OnClickListener { _, _ ->
-                                    activity.addMarker(MarkerOptions().position(result.entryIC.point).title(result.entryIC.name).icon(
-                                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
-                                    ))
-                                    activity.addMarker(MarkerOptions().position(result.outIC.point).title(result.outIC.name).icon(
-                                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
-                                    ))
-                                    activity.mMap.moveCamera(CameraUpdateFactory.newLatLng(result.entryIC.point))
-                                    activity.mMap.moveCamera(CameraUpdateFactory.zoomTo(15F))
-                                })
-                        .create()
+                val dialog = if(result.toll == 0L) {
+                    // 下道で間に合う場合
+                    activity.generateYesNoDialog(
+                            "高速道路を使用せずに間に合います．GoogleMapを起動しますか？",
+                            {
+                                activity.launchGoogleMapApp()
+                            },
+                            {}
+                    )
+                } else {
+                    activity.generateYesNoDialog(
+                            "最適な経路が見つかりました．GoogleMapを起動しますか？",
+                            {
+                                activity.launchGoogleMapApp(result.entryIC!!.point)
+                            },
+                            {
+                                activity.addMarker(MarkerOptions().position(result.entryIC!!.point).title(result.entryIC.name).icon(
+                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                                ))
+                                activity.addMarker(MarkerOptions().position(result.outIC!!.point).title(result.outIC.name).icon(
+                                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+                                ))
+                                activity.mMap.moveCamera(CameraUpdateFactory.newLatLng(result.entryIC!!.point))
+                                activity.mMap.moveCamera(CameraUpdateFactory.zoomTo(15F))
+                            }
+                    )
+                }
+
                 dialog.show()
             }
         }
+    }
+
+    private fun generateYesNoDialog(message: String, yesFun: () -> Unit, noFun: () -> Unit): AlertDialog {
+        return AlertDialog.Builder(this).setMessage(message)
+                .setPositiveButton("はい",
+                        DialogInterface.OnClickListener { _, _ ->
+                            yesFun()
+                        })
+                .setNegativeButton("いいえ",
+                        DialogInterface.OnClickListener { _, _ ->
+                            noFun()
+                        })
+                .create()
     }
 
     private class OverAllThread(
