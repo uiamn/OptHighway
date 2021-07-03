@@ -16,8 +16,9 @@ import java.io.InputStreamReader
 import java.time.Duration
 import java.time.Instant
 
-class MapsFunctions(geoApiContext: GeoApiContext) {
+class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
     private val geoApiContext = geoApiContext
+    private val activity = activity
 
     fun obtainLatLngFromPositionName(deptText: String, destText: String): Structures.DeptDestLatLng {
         // TODO: APIのリクエスト数を抑へるためにダミーデータ(二子玉川駅と駿府城公園)を返してゐる
@@ -47,7 +48,7 @@ class MapsFunctions(geoApiContext: GeoApiContext) {
         )
     }
 
-    fun obtainNearestInterChange(activity: Activity, latLng: LatLng): Structures.LatLngWithName {
+    fun obtainNearestInterChange(latLng: LatLng): Structures.LatLngWithName {
         val inputStream = activity.resources.assets.open("final_interchanges.json")
         val br = BufferedReader(InputStreamReader(inputStream))
         val jsonText = br.readText()
@@ -165,6 +166,32 @@ class MapsFunctions(geoApiContext: GeoApiContext) {
 
         Log.d("ENTRY TO HIGHWAY AT", icPath[pivot])
         // TODO: 高速道路料金を計算して返す
-        return Structures.HighwaySection(icPath[pivot], icPath.last(), 0L)
+
+        val inputStream = activity.resources.assets.open("final_interchanges.json")
+        val br = BufferedReader(InputStreamReader(inputStream))
+        val jsonText = br.readText()
+        val interChanges = JSONArray(jsonText)
+
+        val entryICName = icPath[pivot]
+        val outICName = icPath.last()
+
+        var entryICLatLng: LatLng? = null
+        var outICLatLng: LatLng? = null
+
+        for(i in 0 until interChanges.length()) {
+            val jsonObject = interChanges.getJSONObject(i)
+            if(jsonObject.getString("name") == entryICName) {
+                val latLngJsonArr = jsonObject.getJSONArray("point")
+                entryICLatLng = LatLng(latLngJsonArr.getDouble(1), latLngJsonArr.getDouble(0))
+            } else if (jsonObject.getString("name") == outICName) {
+                val latLngJsonArr = jsonObject.getJSONArray("point")
+                outICLatLng = LatLng(latLngJsonArr.getDouble(1), latLngJsonArr.getDouble(0))
+            }
+
+            if(entryICLatLng != null && outICLatLng != null) break
+        }
+
+        return if(entryICLatLng != null && outICLatLng != null) Structures.HighwaySection(Structures.LatLngWithName(entryICName, entryICLatLng), Structures.LatLngWithName(outICName, outICLatLng), 0L)
+        else null
     }
 }

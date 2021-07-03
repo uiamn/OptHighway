@@ -37,6 +37,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
     private val DEPT_SUGGEST_REQ = 1234
     private val DEST_SUGGEST_REQ = 1235
 
+    private val WHAT_THREAD_RESULT = 1236
+
     private lateinit var locationClient: FusedLocationProviderClient
     private lateinit var request: LocationRequest
     private lateinit var callback: LocationCallback
@@ -75,7 +77,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                 .apiKey(getString(R.string.google_maps_key))
                 .build()
 
-        mapsAPI = MapsFunctions(geoApiContext)
+        mapsAPI = MapsFunctions(this, geoApiContext)
 
         findViewById<EditText>(R.id.departureInput).setOnClickListener {
             val intent = Intent(this, PlaceSuggestActivity::class.java)
@@ -116,7 +118,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             arriveTime = deptArriveTime.second
 
             if(::deptLatLng.isInitialized && ::destLatLng.isInitialized) {
-                GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
+//                GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
+                OverAllThread(handler, this, mapsAPI, deptLatLng, destLatLng, deptTime, arriveTime).start()
             } else {
                 Toast.makeText(this, "先に出発地と目的地を入力して下さい", Toast.LENGTH_LONG).show()
             }
@@ -142,8 +145,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
         val dateText = "%d-%s-%s".format(
                 year,
-                if(month > 10) month.toString() else "0%d".format(month),
-                if(day > 10) day.toString() else "0%d".format(day)
+                if(month > 9) month.toString() else "0%d".format(month),
+                if(day > 9) day.toString() else "0%d".format(day)
         )
 
         val deptInstant = Instant.parse("%sT%s:00Z".format(dateText, deptTimeText))
@@ -209,44 +212,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                 return
             }
 
-//            if (msg.what == WhatEnum.GLLFPN_RESULT.v) {
-//                // 出発地点，目的地点の名称から取得した座標にピンを建てる
-//                val po = msg.obj as Structures.DeptDestLatLng
-//                activity.addMarker(MarkerOptions().position(po.dept).title("出発地").icon(
-//                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-//                ))
-//                activity.addMarker(MarkerOptions().position(po.dest).title("目的地").icon(
-//                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-//                ))
-//
-//                activity.addMarkerAtDeptAndDestPoint(msg.obj as Structures.DeptDestLatLng)
-//
-//                // TODO: すぐには実行しない
-//                GetNearestInterChangeThread(this, activity.mapsAPI, activity, po.dept, po.dest).start()
-//            } else
-            if (msg.what == WhatEnum.NIC_RESULT.v) {
-                // 出発地点，目的地点に最も近いICにピンを建てる
-                val po = msg.obj as List<*>
-                val icNearestToDept = po[0] as Structures.LatLngWithName
-                val icNearestToDest = po[1] as Structures.LatLngWithName
+            if (msg.what == activity.WHAT_THREAD_RESULT) {
+                val result = msg.obj as Structures.HighwaySection
 
-                activity.addMarker(MarkerOptions().position(icNearestToDept.point).title(icNearestToDept.name).icon(
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                activity.addMarker(MarkerOptions().position(result.entryIC.point).title(result.entryIC.name).icon(
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
                 ))
-                activity.addMarker(MarkerOptions().position(icNearestToDest.point).title(icNearestToDest.name).icon(
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
+                activity.addMarker(MarkerOptions().position(result.outIC.point).title(result.outIC.name).icon(
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
                 ))
-
-                GetMinimumPathThread(this, activity, icNearestToDept.name, icNearestToDest.name).start()
-            } else if (msg.what == WhatEnum.MP_RESULT.v) {
-                val po = msg.obj as ArrayList<String>
-
-                val deptLatLng = activity.deptLatLng
-                val destLatLng = activity.destLatLng
-                val deptTime = activity.deptTime
-                val arrivalTime = activity.arriveTime
-
-                GetOptimalHighwaySectionThread(this, activity.mapsAPI, po, deptLatLng, destLatLng, deptTime, arrivalTime).start()
             }
         }
     }
@@ -269,6 +243,44 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
     }
 
+    private class OverAllThread(
+            handler: HandlerInMapsActivity,
+            activity: MapsActivity,
+            mapsAPI: MapsFunctions,
+            deptCoordinate: LatLng,
+            destCoordinate: LatLng,
+            deptTime: Instant,
+            arrivalTime: Instant
+    ) : Thread() {
+        private val handler = handler
+        private val activity = activity
+        private val mapsAPI = mapsAPI
+        private val deptCoordinate = deptCoordinate
+        private val destCoordinate = destCoordinate
+        private val deptTime = deptTime
+        private val arrivalTime = arrivalTime
+
+        override fun run() {
+            // 最寄りのICを取得
+            val deptNearestIC = mapsAPI.obtainNearestInterChange(deptCoordinate)
+            val destNearestIC = mapsAPI.obtainNearestInterChange(destCoordinate)
+
+            Log.d("hoge", deptNearestIC.toString())
+            Log.d("hoge", destNearestIC.toString())
+
+            // 最短のパスを取得
+            val gf = GraphFunctions(activity)
+            val minimumPath = gf.searchMinimumPath(deptNearestIC.name, destNearestIC.name)
+
+            Log.d("hoge", minimumPath.toString())
+
+            // 最も効率の良い高速道路の使ひ方を取得
+            val result = mapsAPI.obtainHighwaySection(minimumPath, deptCoordinate, destCoordinate, deptTime, arrivalTime)
+            handler.sendMessage(handler.obtainMessage(activity.WHAT_THREAD_RESULT, result))
+        }
+
+    }
+
     private class GetNearestInterChangeThread(
             handler: HandlerInMapsActivity,
             mapsAPI: MapsFunctions,
@@ -285,8 +297,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
         override fun run() {
 //             TODO: API消費量を抑へるためにダミーデータにしてゐる
-            val deptNearestIC = mapsAPI.obtainNearestInterChange(activity, deptCoordinate)
-            val destNearestIC = mapsAPI.obtainNearestInterChange(activity, destCoordinate)
+            val deptNearestIC = mapsAPI.obtainNearestInterChange(deptCoordinate)
+            val destNearestIC = mapsAPI.obtainNearestInterChange(destCoordinate)
 //            val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
 //            val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
 
@@ -404,6 +416,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
     }
 
     override fun onTimeSet(view: android.widget.TimePicker?, hourOfDay: Int, minute: Int) {
-        findViewById<EditText>(if(isSelectedDeptTime)R.id.deptTimeInput else R.id.arriveTimeInput).setText("%d:%d".format(hourOfDay, minute))
+        findViewById<EditText>(if(isSelectedDeptTime)R.id.deptTimeInput else R.id.arriveTimeInput)
+                .setText("%s:%s".format(
+                        if(hourOfDay > 9) hourOfDay.toString() else "0%d".format(hourOfDay),
+                        if(minute > 9) minute.toString() else "0%d".format(minute)
+                ))
     }
 }
