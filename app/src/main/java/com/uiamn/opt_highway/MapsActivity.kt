@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.TimePickerDialog
 import android.content.DialogInterface
 import android.content.Intent
@@ -16,10 +17,12 @@ import android.os.Message
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.DialogFragment
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
@@ -55,6 +58,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
     private lateinit var geoApiContext: GeoApiContext
     private lateinit var mapsAPI: MapsFunctions
+
+    private val spinner = ProgressDialog.newInstance("最適な経路を探索しています．．．")
 
     private val handler = MapsActivity.HandlerInMapsActivity(this)
 
@@ -105,14 +110,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
 
         findViewById<Button>(R.id.reload_button).setOnClickListener {
-            intent.action = Intent.ACTION_VIEW
-            intent.setClassName(
-                "com.google.android.apps.maps",
-                "com.google.android.maps.MapsActivity"
-            )
 
-            intent.data = Uri.parse("https://www.google.com/maps/dir/?api=1&origin=35.610631,139.681280&destination=35.29468271,138.94878343&travelmode=driving&avoid=tolls,ferries")
-            startActivity(intent)
         }
 
         findViewById<Button>(R.id.startSearchButton).setOnClickListener {
@@ -122,6 +120,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
 
             if(::deptLatLng.isInitialized && ::destLatLng.isInitialized) {
 //                GetNearestInterChangeThread(handler, mapsAPI, this, deptLatLng, destLatLng)
+                spinner.show(supportFragmentManager, "TAG")
                 OverAllThread(handler, this, mapsAPI, deptLatLng, destLatLng, deptTime, arriveTime).start()
             } else {
                 Toast.makeText(this, "先に出発地と目的地を入力して下さい", Toast.LENGTH_LONG).show()
@@ -231,6 +230,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
             }
 
             if (msg.what == activity.WHAT_THREAD_RESULT) {
+                activity.spinner.dismiss()
+
                 if(msg.obj == null) {
                     Toast.makeText(activity, "高速道路を使っても間に合うことができません", Toast.LENGTH_LONG).show()
                     return
@@ -389,5 +390,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                         if(hourOfDay > 9) hourOfDay.toString() else "0%d".format(hourOfDay),
                         if(minute > 9) minute.toString() else "0%d".format(minute)
                 ))
+    }
+
+    class ProgressDialog: DialogFragment() {
+        companion object {
+            fun newInstance(message: String): ProgressDialog {
+                val instance = ProgressDialog()
+                val arguments = Bundle()
+                arguments.putString("message", message)
+                instance.arguments = arguments
+                return instance
+            }
+        }
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val mMessage = arguments!!.getString("message")
+
+            val builder = AlertDialog.Builder(activity!!)
+            val inflater = activity!!.layoutInflater
+            val view = inflater.inflate(R.layout.dialog_progress, null)
+            val mMessageTextView = view.findViewById(R.id.progress_message) as TextView
+            mMessageTextView.text = mMessage
+            builder.setView(view)
+            return builder.create()
+        }
     }
 }
