@@ -15,88 +15,84 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/departureInput"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:focusableInTouchMode="false"
-                    android:hint="出発地"
-                    android:inputType="text" />
-
-                <Button
-                    android:id="@+id/setCurrentPosButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="現在地" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/destinationInput"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:focusableInTouchMode="false"
-                    android:hint="目的地"
-                    android:inputType="text" />
-
-                <Button
-                    android:id="@+id/startSearchButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="検索" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:layout_height="match_parent">
 
             <EditText
-                android:id="@+id/deptTimeInput"
-                android:layout_width="wrap_content"
+                android:id="@+id/departureInput"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:focusableInTouchMode="false"
-                android:inputType="text" />
+                android:hint="出発地"
+                android:inputType="text"
+                app:layout_constraintEnd_toStartOf="@+id/setCurrentPosButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <EditText
-                android:id="@+id/arriveTimeInput"
+            <Button
+                android:id="@+id/setCurrentPosButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="現在地"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <EditText
+                android:id="@+id/destinationInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:ems="10"
                 android:focusableInTouchMode="false"
-                android:inputType="text" />
+                android:hint="目的地"
+                android:inputType="text"
+                app:layout_constraintEnd_toEndOf="@+id/departureInput"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/departureInput" />
+
+            <EditText
+                android:id="@+id/deptTimeInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:focusableInTouchMode="false"
+                android:inputType="text"
+                app:layout_constraintEnd_toStartOf="@+id/arriveTimeInput"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/destinationInput" />
 
             <Button
                 android:id="@+id/reload_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="reload" />
+                android:text="reload"
+                android:visibility="invisible"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/departureInput" />
 
-        </LinearLayout>
+            <EditText
+                android:id="@+id/arriveTimeInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:focusableInTouchMode="false"
+                android:inputType="text"
+                app:layout_constraintEnd_toStartOf="@+id/startSearchButton"
+                app:layout_constraintStart_toEndOf="@+id/deptTimeInput"
+                app:layout_constraintTop_toBottomOf="@+id/destinationInput" />
+
+            <Button
+                android:id="@+id/startSearchButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="検索"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/destinationInput" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </LinearLayout>
 
