@@ -20,34 +20,6 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
     private val geoApiContext = geoApiContext
     private val activity = activity
 
-    fun obtainLatLngFromPositionName(deptText: String, destText: String): Structures.DeptDestLatLng {
-        // TODO: APIのリクエスト数を抑へるためにダミーデータ(二子玉川駅と駿府城公園)を返してゐる
-        return Structures.DeptDestLatLng(
-            LatLng(35.6124215, 139.6253779),
-            LatLng(34.9792769, 138.3786288)
-        )
-
-
-        val deptRes = PlacesApi.findPlaceFromText(
-            geoApiContext,
-            deptText,
-            FindPlaceFromTextRequest.InputType.TEXT_QUERY
-        ).language("ja").fields(FieldMask.GEOMETRY).await()
-        val destRes = PlacesApi.findPlaceFromText(
-            geoApiContext,
-            destText,
-            FindPlaceFromTextRequest.InputType.TEXT_QUERY
-        ).language("ja").fields(FieldMask.GEOMETRY).await()
-
-        val deptLatLng = deptRes.candidates[0].geometry.location
-        val destLatLng = destRes.candidates[0].geometry.location
-
-        return Structures.DeptDestLatLng(
-            LatLng(deptLatLng.lat, deptLatLng.lng),
-            LatLng(destLatLng.lat, destLatLng.lng)
-        )
-    }
-
     fun obtainNearestInterChange(latLng: LatLng): Structures.LatLngWithName {
         val inputStream = activity.resources.assets.open("final_interchanges.json")
         val br = BufferedReader(InputStreamReader(inputStream))

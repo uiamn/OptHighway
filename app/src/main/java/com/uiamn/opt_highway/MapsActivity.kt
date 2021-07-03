@@ -182,17 +182,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
     }
 
-    private fun getLatLngFromPositionName() {
-        val deptText = findViewById<EditText>(R.id.departureInput).text.toString()
-        val destText = findViewById<EditText>(R.id.destinationInput).text.toString()
-
-        GetLatLngFromPositionNameThread(handler, mapsAPI, deptText, destText).start()
-    }
-
-    private fun addMarkerAtDeptAndDestPoint(v: Structures.DeptDestLatLng) {
-        Log.d("hoge", v.toString())
-    }
-
     private fun addMarker(m: MarkerOptions) {
         mMap.addMarker(m)
     }
@@ -222,24 +211,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)
                 ))
             }
-        }
-    }
-
-    private class GetLatLngFromPositionNameThread(
-            handler: HandlerInMapsActivity,
-            mapsAPI: MapsFunctions,
-            deptText: String,
-            destText: String
-    ) : Thread() {
-        // 入力された地点名から，緯度経度を取得するスレッド
-        private val mapsAPI = mapsAPI
-        private val handler = handler
-        private val deptText = deptText
-        private val destText = destText
-
-        override fun run() {
-            val latLngs = mapsAPI.obtainLatLngFromPositionName(deptText, destText)
-            handler.sendMessage(handler.obtainMessage(WhatEnum.GLLFPN_RESULT.v, latLngs))
         }
     }
 
@@ -280,79 +251,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, TimePickerDialog.O
         }
 
     }
-
-    private class GetNearestInterChangeThread(
-            handler: HandlerInMapsActivity,
-            mapsAPI: MapsFunctions,
-            activity: Activity,
-            deptCoordinate: LatLng,
-            destCoordinate: LatLng
-    ) : Thread() {
-        // 出発地点と目的地点に最も近いインタチェンジを取得するスレッド
-        private val handler = handler
-        private val activity = activity
-        private val mapsAPI = mapsAPI
-        private val deptCoordinate = deptCoordinate
-        private val destCoordinate = destCoordinate
-
-        override fun run() {
-//             TODO: API消費量を抑へるためにダミーデータにしてゐる
-            val deptNearestIC = mapsAPI.obtainNearestInterChange(deptCoordinate)
-            val destNearestIC = mapsAPI.obtainNearestInterChange(destCoordinate)
-//            val deptNearestIC = Structures.LatLngWithName("東京", LatLng(35.6124215,139.6253779))
-//            val destNearestIC = Structures.LatLngWithName("静岡", LatLng(34.9792769,138.3786288))
-
-            handler.sendMessage(handler.obtainMessage(WhatEnum.NIC_RESULT.v, listOf(deptNearestIC, destNearestIC)))
-        }
-    }
-
-    private class GetMinimumPathThread(
-            handler: HandlerInMapsActivity,
-            activity: Activity,
-            inICName: String,
-            outICName: String
-    ) : Thread() {
-        // 流入ICから流出ICまでの最も短い高速道路の経路を探索するスレッド
-        private val handler = handler
-        private val activity = activity
-        private val inICName = inICName
-        private val outICName = outICName
-
-        override fun run() {
-            val gf = GraphFunctions(activity)
-            val minimumPath = gf.searchMinimumPath(inICName, outICName)
-
-            Log.d("a", minimumPath.toString())
-            handler.sendMessage(handler.obtainMessage(WhatEnum.MP_RESULT.v, minimumPath))
-        }
-    }
-
-
-    private class GetOptimalHighwaySectionThread(
-            handler: HandlerInMapsActivity,
-            mapsAPI: MapsFunctions,
-            icPath: ArrayList<String>,
-            deptLatLng: LatLng,
-            destLatLng: LatLng,
-            deptTime: Instant,
-            arrivalTime: Instant
-    ) : Thread() {
-        // 入力された地点名から，緯度経度を取得するスレッド
-        private val mapsAPI = mapsAPI
-        private val handler = handler
-        private val icPath = icPath
-        private val deptLatLng = deptLatLng
-        private val destLatLng = destLatLng
-        private val deptTime = deptTime
-        private val arrivalTime = arrivalTime
-
-        override fun run() {
-            val optSection = mapsAPI.obtainHighwaySection(icPath, deptLatLng, destLatLng, deptTime, arrivalTime)
-            handler.sendMessage(handler.obtainMessage(WhatEnum.OPT_SEC_RESULT.v, optSection))
-        }
-    }
-
-
 
     private fun moveCameraToCurrentPosition() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
