@@ -125,10 +125,10 @@ class MapsFunctions(activity: MapsActivity, geoApiContext: GeoApiContext) {
 
             if(secondsDeptToEntryIC + secondsEntryICToLastIC > limitSeconds) {
                 // 間に合はない場合
-                head = pivot
+                tail = pivot
             } else {
                 // 間に合ふ場合
-                tail = pivot
+                head = pivot
             }
 
             if (tail - head <= 1) break
